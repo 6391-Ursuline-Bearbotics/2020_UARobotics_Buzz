@@ -21,11 +21,13 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 // Command Imports
 import frc.robot.commands.ExampleCommand;
+import frc.robot.commands.DriveStraight;
 
 // Subsystem Imports
 import frc.robot.subsystems.ExampleSubsystem;
-import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.StiltSubsystem;
 import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
 
 // Constant Imports
 import frc.robot.Constants.AutoConstants;
@@ -41,9 +43,12 @@ import frc.robot.Constants.OIConstants;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
-  private final ShooterSubsystem m_shooter = new ShooterSubsystem();
+  private final StiltSubsystem m_stilt = new StiltSubsystem();
+  private final DriveSubsystem m_robotDrive = new DriveSubsystem();
+  private final IntakeSubsystem m_intake = new IntakeSubsystem();
 
   private final ExampleCommand m_autoCommand = new ExampleCommand(m_exampleSubsystem);
+  private final DriveStraight m_drivestraight = new DriveStraight(0, m_robotDrive);
 
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
@@ -56,6 +61,15 @@ public class RobotContainer {
   public RobotContainer() {
     // Configure the button bindings
     configureButtonBindings();
+
+    // Configure default commands
+    // Set the default drive command to split-stick arcade drive
+    m_robotDrive.setDefaultCommand(
+        // A split-stick arcade command, with forward/backward controlled by the left
+        // hand, and turning controlled by the right.
+        new RunCommand(() -> m_robotDrive
+            .arcadeDrive(m_driverController.getY(GenericHID.Hand.kLeft),
+                         m_driverController.getX(GenericHID.Hand.kRight)), m_robotDrive));
   }
 
   /**
@@ -66,23 +80,18 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     // TODO need to decide on which buttons to use and if they should be driver / operator
-    // Spin up the shooter when the 'A' button is pressed
-    new JoystickButton(m_driverController, Button.kA.value)
-        .whenPressed(new InstantCommand(m_shooter::enable, m_shooter));
+    // TODO finsih stilt command group // When Back button is pressed run command group to climb
+    new JoystickButton(m_driverController, Button.kBack.value)
+        .whenPressed(null);
 
-    // Turn off the shooter when the 'B' button is pressed
-    new JoystickButton(m_driverController, Button.kB.value)
-        .whenPressed(new InstantCommand(m_shooter::disable, m_shooter));
+    // Run the intake when the driver 'X' button is held, stop when released
+    new JoystickButton(m_driverController, Button.kX.value).whenPressed(new InstantCommand(m_intake::intake, m_intake))  
+      .whenReleased(new InstantCommand(m_intake::stopIntake, m_intake));
 
-    // Run the feeder when the 'X' button is held, but only if the shooter is at speed
-    new JoystickButton(m_driverController, Button.kX.value).whenPressed(new ConditionalCommand(
-        // Run the feeder
-        new InstantCommand(m_shooter::runFeeder, m_shooter),
-        // Do nothing
-        new InstantCommand(),
-        // Determine which of the above to do based on whether the shooter has reached the
-        // desired speed
-        m_shooter::atSetpoint)).whenReleased(new InstantCommand(m_shooter::stopFeeder, m_shooter));
+    // Run the intake when the operator 'X' button is held, stop when released
+    new JoystickButton(m_operatorController, Button.kX.value).whenPressed(new InstantCommand(
+      m_intake::intake, m_intake))  
+      .whenReleased(new InstantCommand(m_intake::stopIntake, m_intake));
   }
 
 

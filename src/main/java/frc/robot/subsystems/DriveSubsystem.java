@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import com.ctre.phoenix.sensors.PigeonIMU;
 
 import frc.robot.Constants.DriveConstants;
 
@@ -33,6 +34,9 @@ public class DriveSubsystem extends SubsystemBase {
       new Encoder(DriveConstants.kRightEncoderPorts[0], DriveConstants.kRightEncoderPorts[1],
                   DriveConstants.kRightEncoderReversed);
 
+  // The CTRE Pigeon
+  private final PigeonIMU m_pigeon = new PigeonIMU(0);
+
   /**
    * Creates a new DriveSubsystem.
    */
@@ -52,6 +56,16 @@ public class DriveSubsystem extends SubsystemBase {
     m_drive.arcadeDrive(fwd, rot);
   }
 
+  /**
+   * Tank style driving for the DriveTrain.
+   *
+   * @param left  Speed in range [-1,1]
+   * @param right Speed in range [-1,1]
+   */
+  public void drive(double left, double right) {
+    m_drive.tankDrive(left, right);
+  }
+  
   /**
    * Resets the drive encoders to currently read a position of 0.
    */
@@ -94,5 +108,24 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public void setMaxOutput(double maxOutput) {
     m_drive.setMaxOutput(maxOutput);
+  }
+  /**
+   * Get the robot's heading.
+   *
+   * @return The robots heading in degrees.
+   */
+  public double getHeading() {
+    double[] ypr = new double[3];
+    m_pigeon.getYawPitchRoll(ypr);
+    return ypr[0];
+  }
+
+  /**
+   * Reset the robots sensors to the zero states.
+   */
+  public void reset() {
+    m_pigeon.setYaw(0);
+    m_leftEncoder.reset();
+    m_rightEncoder.reset();
   }
 }
